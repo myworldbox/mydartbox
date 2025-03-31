@@ -1,25 +1,26 @@
 class ModelUnion {
   final Set<Type> _t;
   final Set _v;
-  final dynamic _val;
-  final bool _has;
 
-  const ModelUnion._(this._t, this._v) : _val = null, _has = false;
+  const ModelUnion._(this._t, this._v);
 
   factory ModelUnion(List items) => ModelUnion._(
     items.whereType<Type>().toSet(),
     items.where((e) => e is! Type).toSet(),
   );
 
-  const ModelUnion._v(this._t, this._v, this._val) : _has = true;
-
-  ModelUnion call(dynamic val) =>
-      _ok(val)
-          ? ModelUnion._v(_t, _v, val)
-          : throw ArgumentError('Invalid: $val');
+  T call<T>(T val) {
+    if (_ok(val)) {
+      return val; // Return the value directly with its original type
+    }
+    throw ArgumentError('Invalid: $val');
+  }
 
   bool _ok(dynamic val) =>
-      _v.contains(val) || _t.any(_match(val)) || _v.any(_eq(val));
+      _v.contains(val) ||
+      _t.contains(val) || // Add this to accept Type objects directly
+      _t.any(_match(val)) ||
+      _v.any(_eq(val));
 
   bool Function(Type) _match(dynamic val) =>
       (t) =>
@@ -51,12 +52,4 @@ class ModelUnion {
               n == b.length && a.every(b.contains),
             _ => false,
           };
-
-  @override
-  String toString() => _has ? '$_val' : throw StateError('No value');
-}
-
-class TypeToken<T> {
-  const TypeToken();
-  Type get type => T;
 }
