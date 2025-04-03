@@ -7,6 +7,11 @@ enum CoreEnumOrientation {
   landscape,
 }
 
+enum CoreEnumScheme {
+  http,
+  https
+}
+
 enum CoreEnumSize { xxs, xs, s, m, l, xl, xxl }
 
 enum CoreEnumFile {
