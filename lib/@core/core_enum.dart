@@ -1,4 +1,4 @@
-enum CoreEnumTheme { light, dark, contrast }
+enum CoreEnumTheme { light, dark, highContrast, highContrastDark }
 
 enum CoreEnumDevice { mobile, tablet, desktop, television, foldable, watch }
 
