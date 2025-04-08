@@ -117,3 +117,50 @@ class ModelUnfold {
     return false;
   }
 }
+
+class CoreUnfold {
+  get data => ModelUnfold([
+    String,
+    {
+      String: [String],
+    },
+    [List<String>],
+    {
+      String: [
+        {
+          {
+            String: {String},
+          },
+        },
+      ],
+    },
+  ]);
+
+  CoreUnfold();
+}
+
+/*
+void main() {
+  final coreUnfold = CoreUnfold();
+  final data = <String, List<Set<Map<String, Set<String>>>>>{
+    'ID': List.generate(
+      5,
+      (index) => {
+        <String, Set<String>>{
+          "er": {(index + 1).toString()},
+        },
+      },
+    ),
+    'Name': List.generate(
+      5,
+      (index) => {
+        <String, Set<String>>{
+          "er": {'Name $index'},
+        },
+      },
+    ),
+  };
+  final a = coreUnfold.data(data);
+  print("bro ${a.toString()} ${a.runtimeType}");
+}
+*/

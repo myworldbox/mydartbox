@@ -1,3 +1,5 @@
+import 'package:mydartbox/@model/model_unfold.dart';
+
 /**
  * 
  * Deep tyes are represented with String
@@ -24,66 +26,94 @@ class ModelJoint {
 
   bool _ok(dynamic val) =>
       _v.contains(val) ||
-      _t.any((t) => _match(val, t)) ||
+      _t.any((t) => _match(val, t, t.toString())) ||
       _v.any((v) => _eq(val, v));
 
-  bool _match(dynamic val, Type t) {
+  bool _match(dynamic val, Type t, String typeStr) {
     if (t == dynamic) return true;
-    if (val.runtimeType == t) return true;
 
-    // Handle generic types
-    if (t.toString().startsWith('List<')) {
-      return val is List && _checkList(val, t);
+    if (t == String) return val is String;
+    if (t == int) return val is int;
+    if (t == double) return val is double;
+    if (t == bool) return val is bool;
+
+    if (typeStr.startsWith('List<')) {
+      return val is List &&
+          _checkGeneric(
+            val,
+            typeStr,
+            'List',
+            (v, et, ets) => v.every((e) => _match(e, et, ets)),
+          );
     }
-    if (t.toString().startsWith('Map<')) {
-      return val is Map && _checkMap(val, t);
+    if (typeStr.startsWith('Map<')) {
+      return val is Map &&
+          _checkGeneric(
+            val,
+            typeStr,
+            'Map',
+            (v, kt, kts, vt, vts) =>
+                v.keys.every((k) => _match(k, kt, kts)) &&
+                v.values.every((v) => _match(v, vt, vts)),
+          );
     }
-    if (t.toString().startsWith('Set<')) {
-      return val is Set && _checkSet(val, t);
+    if (typeStr.startsWith('Set<')) {
+      return val is Set &&
+          _checkGeneric(
+            val,
+            typeStr,
+            'Set',
+            (v, et, ets) => v.every((e) => _match(e, et, ets)),
+          );
     }
 
-    return switch (val) {
-      int _ => t == int,
-      double _ => t == double,
-      String _ => t == String,
-      bool _ => t == bool,
-      _ => false,
-    };
+    return false;
   }
 
-  bool _checkList(List list, Type listType) {
-    final elementType = _getTypeArgument(listType, 0);
-    return elementType == null || list.every((e) => _match(e, elementType));
-  }
-
-  bool _checkMap(Map map, Type mapType) {
-    final keyType = _getTypeArgument(mapType, 0);
-    final valueType = _getTypeArgument(mapType, 1);
-    return (keyType == null || map.keys.every((k) => _match(k, keyType))) &&
-        (valueType == null || map.values.every((v) => _match(v, valueType)));
-  }
-
-  bool _checkSet(Set set, Type setType) {
-    final elementType = _getTypeArgument(setType, 0);
-    return elementType == null || set.every((e) => _match(e, elementType));
-  }
-
-  Type? _getTypeArgument(Type genericType, int index) {
-    final typeArgs = genericType
-        .toString()
-        .split('<')
-        .last
-        .split('>')
-        .first
-        .split(',');
-    if (index < typeArgs.length) {
-      return _parseType(typeArgs[index].trim());
+  bool _checkGeneric(
+    dynamic val,
+    String typeStr,
+    String baseType,
+    Function checkFn,
+  ) {
+    final args = _extractTypeArguments(typeStr);
+    if (baseType == 'Map') {
+      if (args.length != 2) return false;
+      final keyType = _parseType(args[0]);
+      final valueType = _parseType(args[1]);
+      return checkFn(val, keyType.$1, keyType.$2, valueType.$1, valueType.$2);
+    } else {
+      if (args.length != 1) return false;
+      final elementType = _parseType(args[0]);
+      return checkFn(val, elementType.$1, elementType.$2);
     }
-    return null;
   }
 
-  Type? _parseType(String typeName) {
-    const types = {
+  List<String> _extractTypeArguments(String typeStr) {
+    final inner = typeStr.substring(
+      typeStr.indexOf('<') + 1,
+      typeStr.lastIndexOf('>'),
+    );
+    final List<String> args = []; // Explicitly type as List<String>
+    var depth = 0;
+    var start = 0;
+
+    for (var i = 0; i < inner.length; i++) {
+      if (inner[i] == '<')
+        depth++;
+      else if (inner[i] == '>')
+        depth--;
+      else if (inner[i] == ',' && depth == 0) {
+        args.add(inner.substring(start, i).trim());
+        start = i + 1;
+      }
+    }
+    args.add(inner.substring(start).trim());
+    return args;
+  }
+
+  (Type, String) _parseType(String typeName) {
+    const baseTypes = {
       'String': String,
       'int': int,
       'double': double,
@@ -92,7 +122,17 @@ class ModelJoint {
       'Map': Map,
       'Set': Set,
     };
-    return types[typeName];
+
+    typeName = typeName.trim();
+    if (baseTypes.containsKey(typeName)) {
+      return (baseTypes[typeName]!, typeName);
+    }
+    if (typeName.startsWith('List<') ||
+        typeName.startsWith('Map<') ||
+        typeName.startsWith('Set<')) {
+      return (Object, typeName);
+    }
+    throw ArgumentError('Unknown type: $typeName');
   }
 
   bool _eq(dynamic a, dynamic b) =>
@@ -110,3 +150,40 @@ class ModelJoint {
         _ => false,
       };
 }
+
+/*
+class CoreJoint {
+  get data => ModelJoint([
+    String,
+    Map<String, List<String>>,
+    List<String>,
+    Map<String, List<Set<Map<String, Set<String>>>>>,
+  ]);
+
+  CoreJoint();
+}
+
+void main() {
+  final coreJoint = CoreJoint();
+  final data = <String, List<Set<Map<String, Set<String>>>>>{
+    'ID': List.generate(
+      5,
+      (index) => {
+        <String, Set<String>>{
+          "er": {(index + 1).toString()},
+        },
+      },
+    ),
+    'Name': List.generate(
+      5,
+      (index) => {
+        <String, Set<String>>{
+          "er": {'Name $index'},
+        },
+      },
+    ),
+  };
+  final a = coreJoint.data(data);
+  print("bro ${a.toString()} ${a.runtimeType}");
+}
+*/
