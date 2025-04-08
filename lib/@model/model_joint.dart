@@ -21,7 +21,7 @@ class ModelJoint {
     if (_ok(val)) {
       return val;
     }
-    throw ArgumentError('Invalid: $val');
+    throw ArgumentError('\n\nCurrent Type\n-> ${val.runtimeType}\n\nAollowed Types\n-> ${_t.toList()}\n');
   }
 
   bool _ok(dynamic val) =>
@@ -94,7 +94,7 @@ class ModelJoint {
       typeStr.indexOf('<') + 1,
       typeStr.lastIndexOf('>'),
     );
-    final List<String> args = []; // Explicitly type as List<String>
+    final List<String> args = [];
     var depth = 0;
     var start = 0;
 
@@ -112,28 +112,21 @@ class ModelJoint {
     return args;
   }
 
-  (Type, String) _parseType(String typeName) {
-    const baseTypes = {
-      'String': String,
-      'int': int,
-      'double': double,
-      'bool': bool,
-      'List': List,
-      'Map': Map,
-      'Set': Set,
-    };
-
-    typeName = typeName.trim();
-    if (baseTypes.containsKey(typeName)) {
-      return (baseTypes[typeName]!, typeName);
-    }
-    if (typeName.startsWith('List<') ||
-        typeName.startsWith('Map<') ||
-        typeName.startsWith('Set<')) {
-      return (Object, typeName);
-    }
-    throw ArgumentError('Unknown type: $typeName');
-  }
+  (Type, String) _parseType(String typeName) => switch (typeName.trim()) {
+    'String' => (String, typeName),
+    'int' => (int, typeName),
+    'double' => (double, typeName),
+    'bool' => (bool, typeName),
+    'List' => (List, typeName),
+    'Map' => (Map, typeName),
+    'Set' => (Set, typeName),
+    String s
+        when s.startsWith('List<') ||
+            s.startsWith('Map<') ||
+            s.startsWith('Set<') =>
+      (Object, s),
+    _ => throw ArgumentError('Unknown type: $typeName'),
+  };
 
   bool _eq(dynamic a, dynamic b) =>
       identical(a, b) ||
