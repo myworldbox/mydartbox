@@ -7,6 +7,14 @@ enum CoreEnumOrientation {
   landscape,
 }
 
+enum CoreEnumEnv {
+  uat,
+  sit,
+  dev,
+  prod,
+  staging, 
+}
+
 enum CoreEnumScheme {
   http,
   https
