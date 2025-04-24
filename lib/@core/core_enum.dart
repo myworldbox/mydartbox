@@ -20,7 +20,7 @@ enum CoreEnumScheme {
   https
 }
 
-enum CoreEnumSize { xxs, xs, s, m, l, xl, xxl }
+enum CoreEnumSize { xxxs, xxs, xs, s, m, l, xl, xxl, xxxl }
 
 enum CoreEnumFile {
   avi,
